@@ -11,6 +11,8 @@ networkx = "*"
 visual-genome = {editable = true,git = "https://github.com/ranjaykrishna/visual_genome_python_driver.git"}
 matplotlib = "*"
 tqdm = "*"
+ujson = "*"
+numpy = "*"
 
 [requires]
 python_version = "3.6"
