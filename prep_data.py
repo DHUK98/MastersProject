@@ -22,6 +22,7 @@ def save_scene_graphs_as_objs(start_index=1, end_index=108077,min_rels=0,split_s
         temp_scene_graphs = [] 
         prev = i
 
+
 def load_scene_graphs_from_obj(path):
     fh = open(path,'rb')
     temp = pickle.load(fh)
