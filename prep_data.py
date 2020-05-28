@@ -5,13 +5,18 @@ import numpy as np
 from tqdm import tqdm
 import os
 
-# Turn sigle 'scene_graphs.json' into seperate files per image
-def gen_files_by_id():
-    vg.save_scene_graphs_by_id()
+#  Save scene graph objects from the data file 'data/by-id/'
+def save_scene_graphs_as_objs(start_index=1, end_index=108079,min_rels=0,split_size=0):
+    """
+    Helper function to convert scene graphs from the visual genome 'data/by-id/' directory into pickle object files
 
-#  Function to save scene graph objects from the data file 'data/by-id/'
-def save_scene_graphs_as_objs(start_index=1, end_index=108077,min_rels=0,split_size=0):
-    split_points = gen_split_points(start_index,end_index,split_size)
+    Input:
+        start_index
+        end_index
+        min_rels
+        split_size - number of scene graphs per object file
+    """
+    split_points = [min(x,end_index) for x in range(split_size,end_index + split_size,split_size)]
     prev = 1
     for i in split_points:
         print(prev,i)
@@ -22,23 +27,36 @@ def save_scene_graphs_as_objs(start_index=1, end_index=108077,min_rels=0,split_s
         temp_scene_graphs = [] 
         prev = i
 
+# Check if a scene graph contains specified objects
+def scene_graph_contains(sg,objects):
+    """ 
+    Check if a scene graph contains any objects from a specified list
 
-def load_scene_graphs_from_obj(path):
-    fh = open(path,'rb')
-    return pickle.load(fh)
-
-def gen_split_points(start_index, end_index, split_size):
-    tests = [min(x,end_index) for x in range(split_size,end_index + split_size,split_size)]
-    return tests
-
-def scene_graph_contains(sg,filters):
+    Input: 
+        sg - the scene graph to check
+        filters - list of names of objects
+    
+    Output:
+        True - if the scene graph does contain any of the specified objects
+        False - otherwise
+    """    
     for o in sg.objects:
         for n in o.names:
-            if n in filters:
+            if n in objects:
                 return True
     return False
 
 def filter_scene_graphs(path,filters):
+    """ 
+    Filter scene graphs based on list of object names  
+    
+    Input: 
+        path - directory storing object files of lists of scene graphs
+        filters - list of names of objects
+
+    Output:
+        filtered_sgs - filtered list of scene graphs 
+    """
     filtered_sgs = []
     for fn in tqdm(os.listdir(path)):
         with open(os.path.join(path,fn),'rb') as f:
@@ -49,13 +67,5 @@ def filter_scene_graphs(path,filters):
     return filtered_sgs
 
 
-#  filtered_sgs = filter_scene_graphs('data/scene_graph_objs',['chicken'])
-#  pickle.dump(filtered_sgs,open('data/filtered_sgs.obj','wb'))
-
-filtered_sgs = pickle.load(open('data/filtered_sgs.obj','rb'))
-print(len(filtered_sgs))
-
-print(filtered_sgs[15].objects)
-print(filtered_sgs[15].image)
 
 
