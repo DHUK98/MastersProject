@@ -3,7 +3,7 @@ import visual_genome.local as vg
 import pickle
 import numpy as np
 from tqdm import tqdm
-
+import os
 
 # Turn sigle 'scene_graphs.json' into seperate files per image
 def gen_files_by_id():
@@ -25,18 +25,37 @@ def save_scene_graphs_as_objs(start_index=1, end_index=108077,min_rels=0,split_s
 
 def load_scene_graphs_from_obj(path):
     fh = open(path,'rb')
-    temp = pickle.load(fh)
-    return temp
+    return pickle.load(fh)
 
 def gen_split_points(start_index, end_index, split_size):
     tests = [min(x,end_index) for x in range(split_size,end_index + split_size,split_size)]
     return tests
 
-#  save_scene_graphs_as_objs(split_size=5000)
+def scene_graph_contains(sg,filters):
+    for o in sg.objects:
+        for n in o.names:
+            if n in filters:
+                return True
+    return False
 
-test = load_scene_graphs_from_obj('data/scene_graph_objs/15000.obj')
-t =  test[0]
-print(t)
+def filter_scene_graphs(path,filters):
+    filtered_sgs = []
+    for fn in tqdm(os.listdir(path)):
+        with open(os.path.join(path,fn),'rb') as f:
+            sgs = pickle.load(f)
+            for g in sgs:
+                if scene_graph_contains(g,filters):
+                    filtered_sgs.append(g)
+    return filtered_sgs
 
-jsontest = json.dumps(test)
-print(jsontest)
+
+#  filtered_sgs = filter_scene_graphs('data/scene_graph_objs',['chicken'])
+#  pickle.dump(filtered_sgs,open('data/filtered_sgs.obj','wb'))
+
+filtered_sgs = pickle.load(open('data/filtered_sgs.obj','rb'))
+print(len(filtered_sgs))
+
+print(filtered_sgs[15].objects)
+print(filtered_sgs[15].image)
+
+
