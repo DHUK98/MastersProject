@@ -27,7 +27,7 @@ def save_scene_graphs_as_objs(start_index=1, end_index=108079,min_rels=0,split_s
         temp_scene_graphs = [] 
         prev = i
 
-# Check if a scene graph contains specified objects
+# Check if a scene graph contains specified objects 
 def scene_graph_contains(sg,objects):
     """ 
     Check if a scene graph contains any objects from a specified list
