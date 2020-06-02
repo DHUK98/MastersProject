@@ -4,6 +4,7 @@ import pickle
 import numpy as np
 from tqdm import tqdm
 import os
+import pprint
 
 #  Save scene graph objects from the data file 'data/by-id/'
 def save_scene_graphs_as_objs(
@@ -49,27 +50,43 @@ def scene_graph_contains(sg, objects):
     """
     for o in sg.objects:
         for n in o.names:
-            if n in objects:
+            if n.lower() in objects:
                 return True
     return False
 
+def filter_scene_graphs(filters):
+    image_ids = vg.get_all_image_data('data/')
+    images = {img.id: img for img in image_ids}
+    ids = list(images.keys())
+    out = []
+    for id in tqdm(ids):
+        data = json.load(open(f'data/by-id/{id}.json'))
+        graph = vg.parse_graph_local(data,images[id])
+        for o in graph.objects:
+            if scene_graph_contains(graph,filters):
+                out.append(str(id))
+                break
+    return out
 
-def filter_scene_graphs(path, filters):
-    """ 
-    Filter scene graphs based on list of object names  
-    
-    Input: 
-        path - directory storing object files of lists of scene graphs
-        filters - list of names of objects
+filters = ['cat','dog','person']
+graphs = filter_scene_graphs(filters)
+print(len(graphs))
+filename = f'{"_".join(filters)}.txt'
+with open(filename,'w') as out:
+    for i in graphs:
+        out.write(i)
+        out.write(' ')
 
-    Output:
-        filtered_sgs - filtered list of scene graphs 
-    """
-    filtered_sgs = []
-    for fn in tqdm(os.listdir(path)):
-        with open(os.path.join(path, fn), "rb") as f:
-            sgs = pickle.load(f)
-            for g in sgs:
-                if scene_graph_contains(g, filters):
-                    filtered_sgs.append(g)
-    return filtered_sgs
+
+
+ids = []
+with open(filename,'r') as file:
+    data = str(file.read())
+    ids = list(map(int, data.strip().split(' '))) 
+print(len(ids))
+
+image_ids = vg.get_all_image_data('data/')
+images = {img.id: img for img in image_ids}
+for id in tqdm(ids):
+    data = json.load(open(f'data/by-id/{id}.json'))
+    graph = vg.parse_graph_local(data,images[id])
