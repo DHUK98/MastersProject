@@ -13,7 +13,7 @@ def save_scene_graphs_as_objs(
     """
     Helper function to convert scene graphs from the visual genome 'data/by-id/' directory into pickle object files
 
-    Input:
+   Input:
         start_index
         end_index
         min_rels
@@ -54,7 +54,8 @@ def scene_graph_contains(sg, objects):
                 return True
     return False
 
-def filter_scene_graphs(filters):
+def get_filtered_ids(filters):
+    filters.sort()
     image_ids = vg.get_all_image_data('data/')
     images = {img.id: img for img in image_ids}
     ids = list(images.keys())
@@ -64,29 +65,54 @@ def filter_scene_graphs(filters):
         graph = vg.parse_graph_local(data,images[id])
         for o in graph.objects:
             if scene_graph_contains(graph,filters):
-                out.append(str(id))
+                out.append(int(id))
                 break
     return out
 
-filters = ['cat','dog','person']
-graphs = filter_scene_graphs(filters)
-print(len(graphs))
-filename = f'{"_".join(filters)}.txt'
-with open(filename,'w') as out:
-    for i in graphs:
-        out.write(i)
-        out.write(' ')
+def write_ids_to_file(filename, ids):
+    with open(filename,'w') as out:
+        for i in ids:
+            out.write(i)
+            out.write(' ')
+
+def get_scene_graphs_from_ids(ids):
+    image_ids = vg.get_all_image_data('data/')
+    images = {img.id: img for img in image_ids}
+    out = [] 
+    for id in tqdm(ids):
+        data = json.load(open(f'data/by-id/{id}.json'))
+        graph = vg.parse_graph_local(data,images[id])
+        out.append(graph)  
+    return out
+
+def load_ids_from_file(path):
+    ids = []
+    with open(path,'r') as file:
+        data = str(file.read())
+        ids = list(map(int, data.strip().split(' '))) 
+    return ids
+
+
+def get_scene_graphs_from_filters(filters):
+    filters.sort()
+    path = f'{"_".join(filters)}.txt'
+    filtered_ids =[]
+    if not os.path.isfile(path):
+        print("Filters dont already exits. Filtering data")
+        filtered_ids = get_filtered_ids(filters)  
+        print(f"Writing filters to file at '{path}')")
+        write_ids_to_file(path,filtered_ids)
+    else:
+        print("Filtered id already exist loadint from file at '{path}'")
+        filtered_ids = load_ids_from_file(path) 
+   
+    print("Loading scene graphs from filtered ids")
+    return get_scene_graphs_from_ids(filtered_ids)
+        
+
+
+filters = ['dog','cat','person']
+print(get_scene_graphs_from_filters(filters))
 
 
 
-ids = []
-with open(filename,'r') as file:
-    data = str(file.read())
-    ids = list(map(int, data.strip().split(' '))) 
-print(len(ids))
-
-image_ids = vg.get_all_image_data('data/')
-images = {img.id: img for img in image_ids}
-for id in tqdm(ids):
-    data = json.load(open(f'data/by-id/{id}.json'))
-    graph = vg.parse_graph_local(data,images[id])
