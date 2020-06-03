@@ -13,6 +13,9 @@ matplotlib = "*"
 tqdm = "*"
 ujson = "*"
 numpy = "*"
+eden = {editable = true,git = "https://github.com/fabriziocosta/EDeN.git"}
+pydot = "*"
+pygraphviz = "*"
 
 [requires]
 python_version = "3.6"
