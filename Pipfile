@@ -17,6 +17,7 @@ eden = {editable = true,git = "https://github.com/fabriziocosta/EDeN.git"}
 pydot = "*"
 pygraphviz = "*"
 python-igraph = "*"
+pillow = "*"
 
 [requires]
 python_version = "3.6"
