@@ -35,7 +35,7 @@ def get_filtered_image_ids(images, filters):
         graph = vg.parse_graph_local(data, images[id])
         for o in graph.objects:
             if scene_graph_contains(graph, filters):
-                out.append(int(id))
+                out.append(str(id))
                 break
     return out
 
