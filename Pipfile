@@ -18,6 +18,7 @@ pydot = "*"
 pygraphviz = "*"
 python-igraph = "*"
 pillow = "*"
+scikit-learn = "*"
 
 [requires]
 python_version = "3.6"
