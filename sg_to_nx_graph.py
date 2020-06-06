@@ -60,12 +60,13 @@ def dist_between_points(x, y, x2, y2):
 
 
 if __name__ == "__main__":
-    scene_graphs = get_scene_graphs(filters=["cat", "zebra"])
+    scene_graphs = get_scene_graphs(filters=["zebra"])
+    print(len(scene_graphs))
     for sg in tqdm(scene_graphs):
         id = sg.image.id
         g = sg_to_nx(sg)
         solve_mst(g)
 
         data = json_graph.node_link_data(g)
-        with open(f"data/filtered/cat-zebra/{id}.json", "w") as file:
-            zebra.write(json.dumps(data))
+        with open(f"data/filtered/zebra/{id}.json", "w") as file:
+            file.write(json.dumps(data))

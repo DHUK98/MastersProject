@@ -55,15 +55,15 @@ if __name__ == "__main__":
         if entry.name.endswith("json"):
             graphs.append(json_graph.node_link_graph(json.loads(open(entry).read())))
         count += 1
-        #  if count > 1000:
-        #  break
+        if count > 1000:
+            break
     print("vectorize")
     X = vectorize(graphs, complexity=2, nbits=16, discrete=False)
-    print("TruncatedSVD")
-    Xd = TruncatedSVD(n_components=16).fit_transform(X)
-    print("TSNE")
-    X_embedded = TSNE(n_components=2).fit_transform(Xd)
-
-    print("plot")
-    plot(X_embedded)
+    #  print("TruncatedSVD")
+    #  Xd = TruncatedSVD(n_components=16).fit_transform(X)
+    #  print("TSNE")
+    #  X_embedded = TSNE(n_components=2).fit_transform(Xd)
+#
+#  print("plot")
+#  plot(X_embedded)
 
