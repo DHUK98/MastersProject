@@ -17,9 +17,8 @@ def sg_to_nx(sg):
 
     g = nx.DiGraph(w=w, h=h, url=sg.image.url, id=sg.image.id)
     for r in sg.relationships:
-        g.add_edge(
-            r.subject.id, r.object.id, label=r.predicate,
-        )
+        dist = dist_between_points(r.subject.x, r.subject.y, r.object.x, r.subject.y)
+        g.add_edge(r.subject.id, r.object.id, label=r.predicate, weight=dist)
     for o in sg.objects:
         attributes = {d: 1 for d in o.attributes}
         pos = {
@@ -31,6 +30,27 @@ def sg_to_nx(sg):
         attributes.update(pos)
         g.add_node(o.id, label=str(o), svec=attributes)
     return g
+
+
+def add_edge_between_all(nxg):
+    temp = nx.Graph()
+    attributes = nx.get_node_attributes(nxg, "svec")
+    edges = list(itertools.permutations(nxg.nodes, 2))
+    ttt = [e for e in edges if not e[0] == e[1]]
+    n_edged = []
+    for e in edges:
+        n, nn = e
+        na = attributes[n]
+        nna = attributes[nn]
+        dist = dist_between_points(na["x"], na["y"], nna["x"], nna["y"])
+        dist = int(dist)
+        n_edged.append((n, nn, {"label": "distance", "weight": dist}))
+    temp.add_edges_from(n_edged)
+    for u, v, g in temp.edges(data=True):
+        if nxg.has_edge(u, v):
+            continue
+        nxg.add_edge(u, v, label="distance", weight=g["weight"])
+        nxg.add_edge(v, u, label="distance", weight=g["weight"])
 
 
 def solve_mst(nxg):
@@ -60,13 +80,13 @@ def dist_between_points(x, y, x2, y2):
 
 
 if __name__ == "__main__":
-    scene_graphs = get_scene_graphs(filters=["zebra"])
+    scene_graphs = get_scene_graphs(filters=["zebra", "cat"])
     print(len(scene_graphs))
     for sg in tqdm(scene_graphs):
         id = sg.image.id
         g = sg_to_nx(sg)
-        solve_mst(g)
+        add_edge_between_all(g)
 
         data = json_graph.node_link_data(g)
-        with open(f"data/filtered/zebra/{id}.json", "w") as file:
+        with open(f"data/filtered/cat_z_new/{id}.json", "w") as file:
             file.write(json.dumps(data))
