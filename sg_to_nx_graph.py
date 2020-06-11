@@ -11,7 +11,7 @@ import itertools
 from networkx.readwrite import json_graph
 
 
-def sg_to_nx(sg):
+def sg_to_nx1(sg):
     w = sg.image.width
     h = sg.image.height
 

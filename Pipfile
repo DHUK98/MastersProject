@@ -19,6 +19,7 @@ pygraphviz = "*"
 python-igraph = "*"
 pillow = "*"
 scikit-learn = "*"
+imbalanced-learn = "*"
 
 [requires]
 python_version = "3.6"
