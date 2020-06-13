@@ -81,13 +81,6 @@ if __name__ == "__main__":
     K = metrics.pairwise.pairwise_kernels(X, metric="linear")
     print(K[1])
 
-    #  svd = TruncatedSVD(n_components=16)
-    #  svd_results = svd.fit_transform(X)
-    #  tsne = TSNE(n_components=2, verbose=1)
-    #  tsne_results = tsne.fit_transform(svd_results)
-    #  plot(tsne_results, labels)
-    #  plt.show()
-
     #  X_train, X_test, y_train, y_test = train_test_split(
     #  X, labels, train_size=0.25, random_state=42
     #  )
