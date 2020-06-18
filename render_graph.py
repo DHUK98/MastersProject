@@ -8,7 +8,7 @@ import urllib.request
 import os
 
 
-def render_graph(G, with_image=True, object_positions=True, axis=100):
+def render_graph(G, with_image=True, object_positions=True, axis=100, grid=True):
     nodes = G.nodes(data=True)
     edges = G.edges(data=True)
     nodes_labels = nx.get_node_attributes(G, "label")
@@ -46,13 +46,12 @@ def render_graph(G, with_image=True, object_positions=True, axis=100):
         node_size=node_size,
     )
     nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels)
-    plt.xlim(0 - axis * 0.2, axis * 1.2)
-    plt.ylim(0 - axis * 0.2, axis * 1.2)
-    plt.xticks(np.arange(0 - axis * 0.2, axis * 1.2, step=1))
-    plt.yticks(np.arange(0 - axis * 0.2, axis * 1.2, step=1))
-    plt.grid()
-    #  plt.ax2"off")
-    #  plt.tight_layout()
+    plt.xlim(0 - axis * 0.1, axis * 1.1)
+    plt.ylim(0 - axis * 0.1, axis * 1.1)
+    plt.xticks(np.arange(0 - axis * 0.1, axis * 1.1, step=1))
+    plt.yticks(np.arange(0 - axis * 0.1, axis * 1.1, step=1))
+    if grid:
+        plt.grid()
     plt.show()
 
 
