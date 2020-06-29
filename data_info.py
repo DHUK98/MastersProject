@@ -45,7 +45,7 @@ if __name__ == "__main__":
     graphs = []
     labels = []
     c = []
-    for entry in tqdm(os.scandir("data/filtered/cat-zebra")):
+    for entry in tqdm(os.scandir("data/filtered/final_data/zebra-cat-computer/1")):
         if entry.name.endswith("json"):
             with open(entry, "r") as f:
                 graph = json_graph.node_link_graph(json.loads(f.read()))

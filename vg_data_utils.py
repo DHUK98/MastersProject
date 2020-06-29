@@ -6,7 +6,7 @@ from tqdm import tqdm
 import os
 import pprint
 
-# Check if a scene graph contains specified objects
+
 def scene_graph_contains(sg, objects):
     """ 
     Check if a scene graph contains any objects from a specified list
@@ -19,9 +19,9 @@ def scene_graph_contains(sg, objects):
         True - if the scene graph does contain any of the specified objects
         False - otherwise
     """
-    for o in sg.objects:
-        for n in o.names:
-            if n.lower() in objects:
+    for object in sg.objects:
+        for name in object.names:
+            if name.lower() in objects:
                 return True
     return False
 
@@ -65,6 +65,17 @@ def load_image_ids_from_file(path):
 
 
 def get_scene_graphs(filters=[], data_dir="data/"):
+    """
+    Load Visual Genome scene graphs with filters applied.
+    Creates a file containing the id's of scene graph within
+    the filtered subset to allow for faster loading when the
+    same subset needs to be loaded at anther time.
+
+    Input: 
+        - filters:  List of stings of objects to filter scene
+                    graphs for
+        - data_dir: path to visual genome data directory
+    """
     image_ids = vg.get_all_image_data(data_dir)
     images = {img.id: img for img in image_ids}
     filters.sort()

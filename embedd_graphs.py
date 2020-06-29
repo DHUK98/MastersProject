@@ -19,7 +19,7 @@ def plot(X, y):
     plt.xticks([])
     plt.yticks([])
     plt.axis("off")
-    plt.scatter(X[:, 0], X[:, 1], alpha=0.4, cmap=cmap, s=25, edgecolors="k")
+    plt.scatter(X[:, 0], X[:, 1], alpha=0.4, c=y, cmap=cmap, s=25, edgecolors="k")
     plt.show()
 
 
@@ -36,10 +36,10 @@ if __name__ == "__main__":
     print("vectorize")
     X = vectorize(graphs, complexity=2, nbits=16)
 
-    print(X[0].shape)
     print("TruncatedSVD")
     Xd = TruncatedSVD(n_components=50).fit_transform(X)
     print("TSNE")
     X_embedded = TSNE(n_components=2).fit_transform(X)
+
     plot(X_embedded, y)
 

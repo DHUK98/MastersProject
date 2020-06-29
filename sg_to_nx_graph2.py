@@ -9,6 +9,7 @@ import os
 import itertools
 from networkx.readwrite import json_graph
 from render_graph import render_graph
+import uuid
 
 
 def sg_to_nx(sg, distance=100, weighted=True, mst=False, near=0):
@@ -18,7 +19,6 @@ def sg_to_nx(sg, distance=100, weighted=True, mst=False, near=0):
 
     Input:
         sg - scene graph to be converted
-        
 
     Output
     """
@@ -40,21 +40,34 @@ def sg_to_nx(sg, distance=100, weighted=True, mst=False, near=0):
             g.add_edge(r.subject.id, r.object.id, label=r.predicate.lower())
 
     for o in sg.objects:
-        attributes = {d.lower(): 1 for d in o.attributes}
         pos = {
             "x": int(o.x / w * distance),
             "y": int(o.y / h * distance),
             "w": int(o.width / w * distance),
             "h": int(o.height / h * distance),
         }
-        attributes.update(pos)
-        g.add_node(o.id, label=str(o).lower(), svec=attributes)
+        g.add_node(o.id, label=str(o).lower(), svec=pos)
 
     if mst:
         solve_mst(g, weighted=weighted)
 
     if near > 0:
         add_edges_between_close_objects(g, thresh=near, weighted=weighted)
+
+    # Add attribute nodes
+    for o in sg.objects:
+        attributes = [d.lower() for d in o.attributes]
+        pos = {
+            "x": int(o.x / w * distance),
+            "y": int(o.y / h * distance),
+            "w": int(o.width / w * distance),
+            "h": int(o.height / h * distance),
+        }
+        for a in attributes:
+            a_id = uuid.uuid1().int >> 64
+            g.add_node(a_id, label=a, svec=pos)
+            g.add_edge(o.id, a_id, label="is")
+
     return g
 
 
@@ -136,29 +149,18 @@ if __name__ == "__main__":
     scene_graphs = get_scene_graphs(filters=["zebra", "cat", "computer"])
     print(len(scene_graphs))
 
-    directory = "data/filtered/final_data/zebra-cat-computer/test"
+    directory = "data/filtered/final_data/zebra-cat-computer/1_attribs-pos-as-nodes"
     if not os.path.exists(directory):
         os.makedirs(directory)
 
     for sg in tqdm(scene_graphs):
-        mul = 1
+        mul = 0.1
         distance = 100 * mul
         near = 0 * mul
         weighted = False
 
-        g = sg_to_nx(sg, mst=False, near=near, weighted=weighted, distance=distance)
+        g = sg_to_nx(sg, mst=True, near=near, weighted=weighted, distance=distance)
 
-        #  print(g.nodes(data=True))
-        #  render_graph(g, axis=100, grid=False)
-        #  break
-        #  svec = nx.get_node_attributes(g, "svec")
-        #  for s in svec.keys():
-        #  del svec[s]["x"]
-        #  del svec[s]["y"]
-        #  del svec[s]["w"]
-        #  del svec[s]["h"]
-        #  print(svec)
-        #  break
         id = sg.image.id
         data = json_graph.node_link_data(g)
         with open(f"{directory}/{id}.json", "w") as file:

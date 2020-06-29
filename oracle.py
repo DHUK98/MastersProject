@@ -6,8 +6,11 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.decomposition import TruncatedSVD
 from sklearn.linear_model import SGDClassifier
+from sklearn.metrics import confusion_matrix
+from sklearn.linear_model import LogisticRegression
 from sklearn.manifold import TSNE
 from imblearn.over_sampling import SMOTE
+from imblearn.under_sampling import RandomUnderSampler
 import matplotlib.pyplot as plt
 from networkx.readwrite import json_graph
 import networkx as nx
@@ -25,26 +28,57 @@ from sklearn.neighbors import NearestNeighbors
 def oracle2(G):
     nodes = G.nodes(data=True)
     edges = G.edges(data=True)
-    zebras = [(id, data["label"]) for id, data in nodes if data["label"] in ["cat"]]
-    objects = [(id, data["label"]) for id, data in nodes if data["label"] in ["cat"]]
-    #  for z, clab in zebras:
-    #  for o, olab in objects:
-    #  if z == o:
-    #  continue
-    #  if G.has_edge(z, o):
-    #  return 1
-    return len(zebras)
+    computers = [(id, data["label"]) for id, data in nodes if data["label"] in ["cat"]]
+    objects = [(id, data["label"]) for id, data in nodes if data["label"] in ["black"]]
+    for z, clab in computers:
+        for o, olab in objects:
+            if G.has_edge(z, o):
+                return 1
+    return 0
+
+
+def oracle3(G):
+    nodes = G.nodes(data=True)
+    edges = G.edges(data=True)
+    cats = [data["svec"] for id, data in nodes if data["label"] in ["cat"]]
+    for c in cats:
+        if "black" in c.keys():
+            return 1
+    return 0
+
+
+def oracle4(G):
+    nodes = G.nodes(data=True)
+    cats = [id for id, data in nodes if data["label"] in ["cat", "zebra"]]
+
+    for c in cats:
+        neighbors = G[c]
+        for key in neighbors.keys():
+            data = neighbors[key]
+            if data["label"] == "at position":
+                print(G[key])
+                #  if G[key]["svec"]["x"] >= 50:
+                #  return 1
+
+    return 0
 
 
 def oracle1(G):
     nodes = G.nodes(data=True)
-    rightbetter = [
-        data["svec"]["x"] + (data["svec"]["w"] / 2)
-        for id, data in nodes
-        if data["label"] in ["cat"]
+    objects = [
+        data["svec"]["x"] for id, data in nodes if data["label"] in ["cat", "zebra"]
     ]
-    if len(rightbetter) > 0:
-        return int((sum(rightbetter) / len(rightbetter)) / 2) + 1
+    right_objects = [
+        data["svec"]["x"]
+        for id, data in nodes
+        if data["label"] in ["cat", "zebra"]
+        if data["svec"]["x"] >= 5
+    ]
+
+    if len(objects) > 0:
+        if len(objects) - len(right_objects) == 0:
+            return 1
+
     return 0
 
 
@@ -62,14 +96,17 @@ def plot(X, y):
 if __name__ == "__main__":
     graphs = []
     count = 0
-    for entry in tqdm(os.scandir("data/filtered/final_data/zebra-cat-computer/8")):
+    for entry in tqdm(
+        os.scandir("data/filtered/final_data/zebra-cat-computer/1_attribs-pos-as-nodes")
+    ):
         if entry.name.endswith("json"):
             with open(entry, "r") as f:
                 graphs.append(json_graph.node_link_graph(json.loads(f.read())))
         count += 1
+
     labels = []
     for i in range(len(graphs)):
-        labels.append(oracle1(graphs[i]))
+        labels.append(oracle4(graphs[i]))
     class_weight = Counter(labels)
     print(class_weight)
     X = vectorize(graphs, complexity=3)
@@ -77,32 +114,20 @@ if __name__ == "__main__":
         "Instances: %d Features: %d with an avg of %d features per instance"
         % (X.shape[0], X.shape[1], X.getnnz() / X.shape[0])
     )
-    graphs, g_val = train_test_split(graphs, random_state=42)
-
-    X, X_val, labels, y_val = train_test_split(
-        X, labels, test_size=0.1, random_state=42
+    predictor = SGDClassifier(
+        average=True, class_weight="balanced", shuffle=True, n_jobs=-1
     )
-    print(Counter(y_val))
-    sm = SMOTE(random_state=42)
-    X, labels = sm.fit_sample(X, labels)
-
     X_train, X_test, y_train, y_test = train_test_split(
-        X, labels, train_size=0.25, random_state=42
+        X, labels, train_size=0.1, random_state=42
     )
-    print(Counter(y_train))
-    print(Counter(y_test))
-    clf = SGDClassifier(average=True, class_weight="balanced", shuffle=True, n_jobs=-1)
-    #  clf = RandomForestClassifier(n_jobs=-1, n_estimators=100, class_weight="balanced")
-    clf.fit(X_train, y=y_train)
-    for i in range(len(y_val) - 1):
-        if y_val[i] > 0:
-            pred = clf.predict(X_val[i])
-            print(g_val[i].graph["url"])
-            print(f"pred: {pred}, label: {y_val[i]})")
-            print()
+    predictor.fit(X_train, y_train)
+    rus = RandomUnderSampler(random_state=42)
+    X_test, y_test = rus.fit_resample(X_test, y_test)
+    print(predictor.score(X_test, y_test))
 
-    print(clf.score(X_test, y_test))
-    print(clf.score(X_val, y_val))
-    #  scores = cross_val_score(clf, X, labels, cv=10, scoring="accuracy")
-    #  print(scores)
-    #  print("AUC ROC: %.4f +- %.4f" % (np.mean(scores), np.std(scores)))
+    pred = predictor.predict(X_test)
+    print(confusion_matrix(y_test, pred))
+
+    scores = cross_val_score(predictor, X, labels, cv=10, scoring="roc_auc")
+    print(scores)
+    print("AUC ROC: %.4f +- %.4f" % (np.mean(scores), np.std(scores)))
