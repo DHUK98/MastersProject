@@ -50,36 +50,30 @@ def oracle3(G):
 def oracle4(G):
     nodes = G.nodes(data=True)
     cats = [id for id, data in nodes if data["label"] in ["cat", "zebra"]]
-
+    count = 0
     for c in cats:
-        neighbors = G[c]
-        for key in neighbors.keys():
-            data = neighbors[key]
-            if data["label"] == "at position":
-                print(G[key])
-                #  if G[key]["svec"]["x"] >= 50:
-                #  return 1
+        for neighbor in G.neighbors(c):
+            if G.nodes[neighbor]["label"] == "pos":
+                if G.nodes[neighbor]["svec"]["x"] >= 50:
+                    count += 1
+                    print(G.nodes[neighbor])
 
-    return 0
+    return 1 if count == len(cats) and len(cats) > 0 else 0
 
 
 def oracle1(G):
     nodes = G.nodes(data=True)
     objects = [
-        data["svec"]["x"] for id, data in nodes if data["label"] in ["cat", "zebra"]
-    ]
-    right_objects = [
         data["svec"]["x"]
         for id, data in nodes
-        if data["label"] in ["cat", "zebra"]
-        if data["svec"]["x"] >= 5
+        if data["label"] in ["cat", "zebra", "computer"]
     ]
 
-    if len(objects) > 0:
-        if len(objects) - len(right_objects) == 0:
-            return 1
-
-    return 0
+    count = 0
+    for o in objects:
+        if o >= 50:
+            count += 1
+    return 1 if count == len(objects) and len(objects) > 0 else 0
 
 
 def plot(X, y):
@@ -97,7 +91,7 @@ if __name__ == "__main__":
     graphs = []
     count = 0
     for entry in tqdm(
-        os.scandir("data/filtered/final_data/zebra-cat-computer/1_attribs-pos-as-nodes")
+        os.scandir("data/filtered/final_data/zebra-cat-computer/1_attribs-as-nodes")
     ):
         if entry.name.endswith("json"):
             with open(entry, "r") as f:
@@ -106,7 +100,7 @@ if __name__ == "__main__":
 
     labels = []
     for i in range(len(graphs)):
-        labels.append(oracle4(graphs[i]))
+        labels.append(oracle2(graphs[i]))
     class_weight = Counter(labels)
     print(class_weight)
     X = vectorize(graphs, complexity=3)
@@ -122,12 +116,15 @@ if __name__ == "__main__":
     )
     predictor.fit(X_train, y_train)
     rus = RandomUnderSampler(random_state=42)
-    X_test, y_test = rus.fit_resample(X_test, y_test)
-    print(predictor.score(X_test, y_test))
+    #  X_test, y_test = rus.fit_resample(X_test, y_test)
+    #  print(predictor.score(X_test, y_test))
 
     pred = predictor.predict(X_test)
+    print(accuracy_score(y_test, pred))
     print(confusion_matrix(y_test, pred))
 
+    #  X, labels = rus.fit_resample(X, labels)
+    print(Counter(labels))
     scores = cross_val_score(predictor, X, labels, cv=10, scoring="roc_auc")
     print(scores)
     print("AUC ROC: %.4f +- %.4f" % (np.mean(scores), np.std(scores)))

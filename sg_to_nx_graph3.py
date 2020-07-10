@@ -168,7 +168,8 @@ if __name__ == "__main__":
 
         g = sg_to_nx(sg, mst=True, near=near, weighted=weighted, distance=distance)
 
-        render_graph(g, with_image=True, object_positions=False, axis=1, grid=False)
+        print(g.nodes(data=True))
+        #  render_graph(g, with_image=True, object_positions=False, axis=1, grid=False)
         break
 
         id = sg.image.id
