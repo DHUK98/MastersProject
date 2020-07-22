@@ -66,9 +66,25 @@ def sg_to_nx(sg, distance=100, weighted=True, mst=False, near=0):
 
         del g.nodes[o.id]["svec"]
 
-        p_id = uuid.uuid1().int >> 64
-        g.add_node(p_id, label="pos", svec=pos)
-        g.add_edge(o.id, p_id, label="at position")
+        x_id = uuid.uuid1().int >> 64
+        g.add_node(x_id, label="x", weight=pos["x"])
+        g.add_edge(o.id, x_id, label="pos")
+
+        y_id = uuid.uuid1().int >> 64
+        g.add_node(y_id, label="y", weight=pos["y"])
+        g.add_edge(o.id, y_id, label="pos")
+
+        #  w_id = uuid.uuid1().int >> 64
+        #  g.add_node(w_id, label="w", weight=pos["w"])
+        #  g.add_edge(o.id, w_id, label="dim")
+        #
+        #  h_id = uuid.uuid1().int >> 64
+        #  g.add_node(h_id, label="h", weight=pos["h"])
+        #  g.add_edge(o.id, h_id, label="dim")
+
+        #  p_id = uuid.uuid1().int >> 64
+        #  g.add_node(p_id, label="pos", svec=pos)
+        #  g.add_edge(o.id, p_id, label="at position")
 
         for a in attributes:
             a_id = uuid.uuid1().int >> 64
@@ -156,21 +172,17 @@ if __name__ == "__main__":
     scene_graphs = get_scene_graphs(filters=["zebra", "cat", "computer"])
     print(len(scene_graphs))
 
-    directory = "data/filtered/final_data/zebra-cat-computer/1_attribs-pos-as-nodes"
+    directory = "data/filtered/final_data/zebra-cat-computer/test_pos_indiv_node"
     if not os.path.exists(directory):
         os.makedirs(directory)
 
     for sg in tqdm(scene_graphs):
         mul = 1
         distance = 100 * mul
-        near = 0 * mul
+        near = 25 * mul
         weighted = True
 
         g = sg_to_nx(sg, mst=True, near=near, weighted=weighted, distance=distance)
-
-        print(g.nodes(data=True))
-        #  render_graph(g, with_image=True, object_positions=False, axis=1, grid=False)
-        break
 
         id = sg.image.id
         data = json_graph.node_link_data(g)

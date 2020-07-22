@@ -2,6 +2,7 @@ from sklearn.model_selection import cross_val_score
 from sklearn.model_selection import cross_val_predict
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
+from sklearn.metrics import balanced_accuracy_score
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.decomposition import TruncatedSVD
@@ -9,6 +10,7 @@ from sklearn.linear_model import SGDClassifier
 from sklearn.metrics import confusion_matrix
 from sklearn.linear_model import LogisticRegression
 from sklearn.manifold import TSNE
+from sklearn.utils import shuffle
 from imblearn.over_sampling import SMOTE
 from imblearn.under_sampling import RandomUnderSampler
 import matplotlib.pyplot as plt
@@ -24,8 +26,13 @@ import os
 from sklearn import metrics
 from sklearn.neighbors import NearestNeighbors
 
+def oracle_1(G):
+    nodes = G.nodes(data=True)
+    cat = [id for id, data in nodes if data["label"] in ["cat"]]
+    return 1 if len(cat) > 0 else 0
 
-def oracle2(G):
+
+def oracle_2_atribs_as_nodes(G):
     nodes = G.nodes(data=True)
     edges = G.edges(data=True)
     computers = [(id, data["label"]) for id, data in nodes if data["label"] in ["cat"]]
@@ -37,7 +44,7 @@ def oracle2(G):
     return 0
 
 
-def oracle3(G):
+def oracle_2(G):
     nodes = G.nodes(data=True)
     edges = G.edges(data=True)
     cats = [data["svec"] for id, data in nodes if data["label"] in ["cat"]]
@@ -47,67 +54,49 @@ def oracle3(G):
     return 0
 
 
-def oracle4(G):
+def oracle_3(G):
+    nodes = G.nodes(data=True)
+    objects = [
+        data["svec"]["x"] for id, data in nodes if data["label"] in ["cat", "zebra"]
+    ]
+    for o in objects:
+        if o >= 50:
+            return 1
+    return 0
+
+
+def oracle_3_pos_as_nodes(G):
     nodes = G.nodes(data=True)
     cats = [id for id, data in nodes if data["label"] in ["cat", "zebra"]]
-    count = 0
     for c in cats:
         for neighbor in G.neighbors(c):
             if G.nodes[neighbor]["label"] == "pos":
                 if G.nodes[neighbor]["svec"]["x"] >= 50:
-                    count += 1
-                    print(G.nodes[neighbor])
-
-    return 1 if count == len(cats) and len(cats) > 0 else 0
+                    return 1
+    return 0
 
 
-def oracle1(G):
+def oracle_4(G):
     nodes = G.nodes(data=True)
-    objects = [
-        data["svec"]["x"]
-        for id, data in nodes
-        if data["label"] in ["cat", "zebra", "computer"]
-    ]
-
-    count = 0
-    for o in objects:
-        if o >= 50:
-            count += 1
-    return 1 if count == len(objects) and len(objects) > 0 else 0
+    cats = [id for id, data in nodes if data["label"] in ["cat"]]
+    if len(cats) > 4:
+        return 1
+    return 0
 
 
-def plot(X, y):
-    size = 8
-    cmap = "rainbow"
-    plt.figure(figsize=(size, size))
-    plt.xticks([])
-    plt.yticks([])
-    plt.axis("off")
-    plt.scatter(X[:, 0], X[:, 1], alpha=0.5, c=y, cmap=cmap, s=20, edgecolors="k")
-    plt.show()
-
-
-if __name__ == "__main__":
+def accuracy_of_representation_with_oracle(data_file, oracle):
     graphs = []
-    count = 0
-    for entry in tqdm(
-        os.scandir("data/filtered/final_data/zebra-cat-computer/1_attribs-as-nodes")
-    ):
+    for entry in os.scandir(f"data/filtered/final_data/zebra-cat-computer/{data_file}"):
         if entry.name.endswith("json"):
             with open(entry, "r") as f:
                 graphs.append(json_graph.node_link_graph(json.loads(f.read())))
-        count += 1
 
     labels = []
     for i in range(len(graphs)):
-        labels.append(oracle2(graphs[i]))
-    class_weight = Counter(labels)
-    print(class_weight)
+        labels.append(oracle(graphs[i]))
+
     X = vectorize(graphs, complexity=3)
-    print(
-        "Instances: %d Features: %d with an avg of %d features per instance"
-        % (X.shape[0], X.shape[1], X.getnnz() / X.shape[0])
-    )
+
     predictor = SGDClassifier(
         average=True, class_weight="balanced", shuffle=True, n_jobs=-1
     )
@@ -115,16 +104,20 @@ if __name__ == "__main__":
         X, labels, train_size=0.1, random_state=42
     )
     predictor.fit(X_train, y_train)
-    rus = RandomUnderSampler(random_state=42)
-    #  X_test, y_test = rus.fit_resample(X_test, y_test)
-    #  print(predictor.score(X_test, y_test))
 
     pred = predictor.predict(X_test)
-    print(accuracy_score(y_test, pred))
+    print(balanced_accuracy_score(y_test, pred))
     print(confusion_matrix(y_test, pred))
 
-    #  X, labels = rus.fit_resample(X, labels)
-    print(Counter(labels))
+    X, labels = shuffle(X, labels)
+
     scores = cross_val_score(predictor, X, labels, cv=10, scoring="roc_auc")
-    print(scores)
+
     print("AUC ROC: %.4f +- %.4f" % (np.mean(scores), np.std(scores)))
+    print()
+
+
+if __name__ == "__main__":
+    accuracy_of_representation_with_oracle(
+        "2_attribs-as-nodes", oracle_2_atribs_as_nodes
+    )

@@ -43,6 +43,7 @@ def get_filtered_image_ids(images, filters):
 def get_scene_graphs_from_image_ids(images, ids):
     out = []
     for id in tqdm(ids):
+        id = int(id)
         data = json.load(open(f"data/by-id/{id}.json"))
         graph = vg.parse_graph_local(data, images[id])
         out.append(graph)

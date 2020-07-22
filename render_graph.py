@@ -28,7 +28,7 @@ def render_graph(G, with_image=True, object_positions=True, axis=100, grid=True)
     if with_image:
         f = urllib.request.urlopen(G.graph["url"])
         a = plt.imread(f, 0)
-        plt.imshow(a, extent=[0 - axis * 0.2, axis, 0, axis])
+        plt.imshow(a, extent=[0 - axis * 0.2, axis * 1.2, 0, axis * 1.2])
 
     node_size = 200
     nx.draw_networkx_nodes(G, pos, node_color="r", node_size=node_size, alpha=0.8)
